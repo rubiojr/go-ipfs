@@ -15,3 +15,5 @@ build:
 
 override_dh_auto_install:
 override_dh_install:
+	mkdir -p debian/ipfs/usr/bin
+	mv cmd/ipfs/ipfs debian/ipfs/usr/bin
