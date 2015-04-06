@@ -1,0 +1,2 @@
+# defaults for /etc/default/ipfs on Debian systems
+DAEMON_OPTS=""

@@ -1,0 +1,5 @@
+ipfs (0.2.3-0rbel1) trusty; urgency=medium
+
+  * Initial package release
+
+ -- Sergio Rubio <rubiojr@frameos.org>  Mon, 06 Apr 2015 15:59:59 +0200

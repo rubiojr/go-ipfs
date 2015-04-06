@@ -1,0 +1,25 @@
+#!upstart
+description "ipfs daemon"
+author "Sergio Rubio"
+
+start on runlevel [2345]
+stop on runlevel [!2345]
+
+respawn
+
+env HOME=/var/lib/ipfs
+
+setuid ipfs
+setgid ipfs
+
+script
+  [ -d $HOME/.go-ipfs ] || ipfs init
+
+  if [ -f "/etc/default/ipfs" ]; then
+    . /etc/default/ipfs
+  fi
+
+  exec /usr/bin/ipfs daemon $DAEMON_OPTS
+end script
+
+

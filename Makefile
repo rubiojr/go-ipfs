@@ -6,10 +6,7 @@ go_test=go test
 endif
 
 
-all:
-	# no-op. try:
-	#   make install
-	#   make test
+all: build
 
 godep:
 	go get github.com/tools/godep
