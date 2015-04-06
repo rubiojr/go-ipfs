@@ -1,6 +1,17 @@
 #!/usr/bin/make -f
 
 export DH_OPTIONS
+export DEB_BUILD_OPTIONS=nocheck
+export GOPATH=Godeps/_workspace:$(PWD)/debian
 
 %:
 	dh $@
+
+build:
+	mkdir -p debian/src/github.com/ipfs/
+	rm -f debian/src/github.com/ipfs/go-ipfs
+	ln -sf $(PWD) debian/src/github.com/ipfs/go-ipfs
+	make build
+
+override_dh_auto_install:
+override_dh_install:
