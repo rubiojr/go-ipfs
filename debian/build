@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
+set -x
 
 NAME=ipfs
-VERSION=$(grep PKG_VERSION repo/config/version.go | perl -pe 's|.*"([\d\.]+)".*|\1|')
+VERSION=$(grep -E "CurrentVersionNumber\s*=" repo/config/version.go |head -n1| perl -pe 's|.*"([\d\.]+)".*|\1|')
 
 BUILD_DIR=$HOME/debian/tmp/$NAME
 PKG_NAME=$NAME-$VERSION
@@ -37,19 +38,24 @@ srcdeb() {
 
 CMD=$1
 ARG1=$2
-echo Building $NAME version $VERSION
 case $CMD in
-  srcdeb)
+  srcdeb|src)
+    echo "Building source Debian package..."
     srcdeb
     ;;
   format)
     gofmt -s -w **/*.go
     ;;
   clean)
-    rm -f $NAME
+    rm -f cmd/$NAME/$NAME
     ;;
-  *)
+  build) 
+    echo Building $NAME version $VERSION
 	  GOPATH=$PWD/Godeps/_workspace go build -o $NAME
     cd cmd/ipfs && go build -i
+    ;;
+  *)
+    echo "Usage: ./debian/build src|format|clean|build"
+    exit 1
     ;;
 esac
