@@ -3,7 +3,7 @@ Section: net
 Priority: extra
 Maintainer: Sergio Rubio <rubiojr@frameos.org>
 Build-Depends: debhelper (>= 8.0.0),
-               golang-go
+               golang-go (>= 1.4)
 Standards-Version: 3.9.2
 #Vcs-Git: git://github.com/ipfs/go-ipfs.git
 #Vcs-Browser: http://github.com/ipfs/go-ipfs
