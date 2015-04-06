@@ -5,6 +5,7 @@ mkdir -p /var/lib/ipfs
 
 if [ "$1" = "configure" ]; then
   grep -q ^ipfs: /etc/group || addgroup --quiet ipfs 
-  grep -q ^ipfs: /etc/passwd || adduser --disabled-password --gecos ipfs --quiet --ingroup ipfs ipfs
+  grep -q ^ipfs: /etc/passwd || \
+    adduser --disabled-password --gecos ipfs --quiet --ingroup ipfs ipfs --home /var/lib/ipfs
   chown -R ipfs:ipfs /var/lib/ipfs
 fi
