@@ -13,11 +13,16 @@ setuid ipfs
 setgid ipfs
 
 script
-  [ -d $HOME/.go-ipfs ] || ipfs init
-
   if [ -f "/etc/default/ipfs" ]; then
     . /etc/default/ipfs
   fi
+
+  if [ "$ENABLED" = "0" ]; then
+    echo "ipfs daemon disabled via /etc/default/ipfs"
+    exit 0
+  fi
+
+  [ -d $HOME/.go-ipfs ] || ipfs init
 
   exec /usr/bin/ipfs daemon $DAEMON_OPTS
 end script
