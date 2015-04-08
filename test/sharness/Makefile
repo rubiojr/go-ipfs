@@ -11,18 +11,24 @@ BINS = bin/random bin/multihash bin/ipfs bin/pollEndpoint
 SHARNESS = lib/sharness/sharness.sh
 IPFS_ROOT = ../..
 
-all: clean deps $(T) aggregate
+# User might want to override those on the command line
+GOFLAGS =
 
-clean:
+all: aggregate
+
+clean: clean-test-results
 	@echo "*** $@ ***"
-	-rm -rf test-results
 	-rm -rf bin/ipfs
 
-$(T):
+clean-test-results:
+	@echo "*** $@ ***"
+	-rm -rf test-results
+
+$(T): clean-test-results deps
 	@echo "*** $@ ***"
 	./$@
 
-aggregate:
+aggregate: clean-test-results $(T)
 	@echo "*** $@ ***"
 	lib/test-aggregate-results.sh
 
@@ -32,11 +38,13 @@ $(SHARNESS):
 	@echo "*** installing $@ ***"
 	lib/install-sharness.sh
 
-bin/%: $(IPFS_ROOT)/**/*.go
-	@echo "*** installing $@ ***"
-	cd .. && make $@
+bin/%: FORCE
+	cd .. && make GOFLAGS=$(GOFLAGS) $@
 
-.PHONY: all clean $(T) aggregate
+race:
+	make GOFLAGS=-race all
+
+.PHONY: all clean $(T) aggregate FORCE
 
 # will fail if curl is not installed.
 # TODO: get rid of this and install curl with git or ipfs.
