@@ -1,3 +1,9 @@
+ipfs (0.2.3+git20150408+3a1242f-0rbel1) UNRELEASED; urgency=medium
+
+  * Do not create /ipfs and /ipns fs endpoints 
+
+ -- Sergio Rubio <rubiojr@frameos.org>  Wed, 08 Apr 2015 18:11:49 +0200
+
 ipfs (0.2.3+git20150408-0rbel1) trusty; urgency=medium
 
   * New git build
