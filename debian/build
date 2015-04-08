@@ -3,7 +3,7 @@ set -e
 set -x
 
 NAME=ipfs
-VERSION=$(grep -E "CurrentVersionNumber\s*=" repo/config/version.go |head -n1| perl -pe 's|.*"([\d\.]+)".*|\1|')
+VERSION=${VERSION:-$(head -n1 debian/changelog | sed 's/.*(\(.*\)).*/\1/' | cut -d\- -f1)}
 
 BUILD_DIR=$HOME/debian/tmp/$NAME
 PKG_NAME=$NAME-$VERSION
@@ -18,15 +18,15 @@ orig_tarball() {
 }
 
 srcdeb() {
-  orig_tarball
-
-	mkdir -p $DEB_TARGET_DIR
 	# Prevents overwriting a good tarball
   if [ -f "$ORIG_TARBALL" ] && [ "$ARG1" != "--force" ]; then
     echo "Original tarball previously created, use --force to overwrite"
     exit 1
   fi
 
+  orig_tarball
+
+	mkdir -p $DEB_TARGET_DIR
 	cd $BUILD_DIR && \
 		tar xzf ${NAME}_$VERSION.orig.tar.gz && \
 	  cd $NAME-$VERSION && \

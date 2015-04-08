@@ -1,4 +1,4 @@
-ipfs (0.2.3-0rbel2+20150408) trusty; urgency=medium
+ipfs (0.2.3+git20150408-0rbel1) trusty; urgency=medium
 
   * New git build
   * Added fuse dependency
