@@ -10,7 +10,7 @@ Standards-Version: 3.9.2
 
 Package: ipfs
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, fuse
 Built-Using: ${misc:Built-Using}
 Description: Ipfs is a global, versioned, peer-to-peer filesystem
   This is the package version of the Go implementation.
