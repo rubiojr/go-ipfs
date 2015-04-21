@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"io"
 	"text/tabwriter"
+	"time"
+
+	context "github.com/ipfs/go-ipfs/Godeps/_workspace/src/golang.org/x/net/context"
 
 	cmds "github.com/ipfs/go-ipfs/commands"
+	core "github.com/ipfs/go-ipfs/core"
 	merkledag "github.com/ipfs/go-ipfs/merkledag"
 	path "github.com/ipfs/go-ipfs/path"
-	"github.com/ipfs/go-ipfs/unixfs"
+	unixfs "github.com/ipfs/go-ipfs/unixfs"
 	unixfspb "github.com/ipfs/go-ipfs/unixfs/pb"
 )
 
@@ -32,7 +36,7 @@ var LsCmd = &cmds.Command{
 	Helptext: cmds.HelpText{
 		Tagline: "List links from an object.",
 		ShortDescription: `
-Retrieves the object named by <ipfs-path> and displays the links
+Retrieves the object named by <ipfs-or-ipns-path> and displays the links
 it contains, with the following format:
 
   <link base58 hash> <link size in bytes> <link name>
@@ -62,7 +66,7 @@ it contains, with the following format:
 
 		dagnodes := make([]*merkledag.Node, 0)
 		for _, fpath := range paths {
-			dagnode, err := node.Resolver.ResolvePath(path.Path(fpath))
+			dagnode, err := core.Resolve(node, path.Path(fpath))
 			if err != nil {
 				res.SetError(err, cmds.ErrNormal)
 				return
@@ -77,7 +81,9 @@ it contains, with the following format:
 				Links: make([]LsLink, len(dagnode.Links)),
 			}
 			for j, link := range dagnode.Links {
-				link.Node, err = link.GetNode(node.DAG)
+				ctx, cancel := context.WithTimeout(context.TODO(), time.Minute)
+				defer cancel()
+				link.Node, err = link.GetNode(ctx, node.DAG)
 				if err != nil {
 					res.SetError(err, cmds.ErrNormal)
 					return

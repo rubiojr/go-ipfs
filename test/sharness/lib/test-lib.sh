@@ -148,7 +148,7 @@ test_init_ipfs() {
 	# todo: in the future, use env?
 
 	test_expect_success "ipfs init succeeds" '
-		export IPFS_PATH="$(pwd)/.go-ipfs" &&
+		export IPFS_PATH="$(pwd)/.ipfs" &&
 		ipfs init -b=1024 > /dev/null
 	'
 
@@ -236,13 +236,22 @@ test_launch_ipfs_daemon_and_mount() {
 }
 
 test_kill_repeat_10_sec() {
+	# try to shut down once + wait for graceful exit
+	kill $1
 	for i in 1 2 3 4 5 6 7 8 9 10
 	do
-		kill $1
 		sleep 1
 		! kill -0 $1 2>/dev/null && return
 	done
-	! kill -0 $1 2>/dev/null
+
+	# if not, try once more, which will skip graceful exit
+	kill $1
+	sleep 1
+	! kill -0 $1 2>/dev/null && return
+
+	# ok, no hope. kill it to prevent it messing with other tests
+	kill -9 $1 2>/dev/null
+	return 1
 }
 
 test_kill_ipfs_daemon() {
@@ -294,4 +303,10 @@ test_should_contain() {
 		cat "$2"
 		return 1
 	fi
+}
+
+test_str_contains() {
+	find=$1
+	shift
+	echo "$@" | grep "$find" >/dev/null
 }

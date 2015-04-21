@@ -2,6 +2,9 @@ package corerepo
 
 import (
 	"fmt"
+	"time"
+
+	context "github.com/ipfs/go-ipfs/Godeps/_workspace/src/golang.org/x/net/context"
 
 	"github.com/ipfs/go-ipfs/core"
 	"github.com/ipfs/go-ipfs/merkledag"
@@ -13,7 +16,7 @@ func Pin(n *core.IpfsNode, paths []string, recursive bool) ([]u.Key, error) {
 
 	dagnodes := make([]*merkledag.Node, 0)
 	for _, fpath := range paths {
-		dagnode, err := n.Resolver.ResolvePath(path.Path(fpath))
+		dagnode, err := core.Resolve(n, path.Path(fpath))
 		if err != nil {
 			return nil, fmt.Errorf("pin: %s", err)
 		}
@@ -27,7 +30,9 @@ func Pin(n *core.IpfsNode, paths []string, recursive bool) ([]u.Key, error) {
 			return nil, err
 		}
 
-		err = n.Pinning.Pin(dagnode, recursive)
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Minute)
+		defer cancel()
+		err = n.Pinning.Pin(ctx, dagnode, recursive)
 		if err != nil {
 			return nil, fmt.Errorf("pin: %s", err)
 		}
@@ -46,7 +51,7 @@ func Unpin(n *core.IpfsNode, paths []string, recursive bool) ([]u.Key, error) {
 
 	dagnodes := make([]*merkledag.Node, 0)
 	for _, fpath := range paths {
-		dagnode, err := n.Resolver.ResolvePath(path.Path(fpath))
+		dagnode, err := core.Resolve(n, path.Path(fpath))
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +61,10 @@ func Unpin(n *core.IpfsNode, paths []string, recursive bool) ([]u.Key, error) {
 	var unpinned []u.Key
 	for _, dagnode := range dagnodes {
 		k, _ := dagnode.Key()
-		err := n.Pinning.Unpin(k, recursive)
+
+		ctx, cancel := context.WithTimeout(context.TODO(), time.Minute)
+		defer cancel()
+		err := n.Pinning.Unpin(ctx, k, recursive)
 		if err != nil {
 			return nil, err
 		}

@@ -345,7 +345,7 @@ Data should be in the format specified by the --inputenc flag.
 
 // objectData takes a key string and writes out the raw bytes of that node (if there is one)
 func objectData(n *core.IpfsNode, fpath path.Path) (io.Reader, error) {
-	dagnode, err := n.Resolver.ResolvePath(fpath)
+	dagnode, err := core.Resolve(n, fpath)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +357,7 @@ func objectData(n *core.IpfsNode, fpath path.Path) (io.Reader, error) {
 
 // objectLinks takes a key string and lists the links it points to
 func objectLinks(n *core.IpfsNode, fpath path.Path) (*Object, error) {
-	dagnode, err := n.Resolver.ResolvePath(fpath)
+	dagnode, err := core.Resolve(n, fpath)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +369,7 @@ func objectLinks(n *core.IpfsNode, fpath path.Path) (*Object, error) {
 
 // objectGet takes a key string from args and a format option and serializes the dagnode to that format
 func objectGet(n *core.IpfsNode, fpath path.Path) (*dag.Node, error) {
-	dagnode, err := n.Resolver.ResolvePath(fpath)
+	dagnode, err := core.Resolve(n, fpath)
 	if err != nil {
 		return nil, err
 	}
@@ -384,13 +384,8 @@ var ErrEmptyNode = errors.New("no data or links in this node")
 
 // objectPut takes a format option, serializes bytes from stdin and updates the dag with that data
 func objectPut(n *core.IpfsNode, input io.Reader, encoding string) (*Object, error) {
-	var (
-		dagnode *dag.Node
-		data    []byte
-		err     error
-	)
 
-	data, err = ioutil.ReadAll(io.LimitReader(input, inputLimit+10))
+	data, err := ioutil.ReadAll(io.LimitReader(input, inputLimit+10))
 	if err != nil {
 		return nil, err
 	}
@@ -399,6 +394,7 @@ func objectPut(n *core.IpfsNode, input io.Reader, encoding string) (*Object, err
 		return nil, ErrObjectTooLarge
 	}
 
+	var dagnode *dag.Node
 	switch getObjectEnc(encoding) {
 	case objectEncodingJSON:
 		node := new(Node)
@@ -429,7 +425,7 @@ func objectPut(n *core.IpfsNode, input io.Reader, encoding string) (*Object, err
 		return nil, err
 	}
 
-	err = addNode(n, dagnode)
+	_, err = n.DAG.Add(dagnode)
 	if err != nil {
 		return nil, err
 	}

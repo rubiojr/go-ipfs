@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 
@@ -15,10 +16,9 @@ import (
 	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 	uio "github.com/ipfs/go-ipfs/unixfs/io"
 	u "github.com/ipfs/go-ipfs/util"
-	debugerror "github.com/ipfs/go-ipfs/util/debugerror"
 )
 
-const nBitsForKeypairDefault = 4096
+const nBitsForKeypairDefault = 2048
 
 var initCmd = &cmds.Command{
 	Helptext: cmds.HelpText{
@@ -34,6 +34,17 @@ var initCmd = &cmds.Command{
 		// directory. That is: should we allow the user to also specify the
 		// name of the file?
 		// TODO cmds.StringOption("event-logs", "l", "Location for machine-readable event logs"),
+	},
+	PreRun: func(req cmds.Request) error {
+		daemonLocked := fsrepo.LockedByOtherProcess(req.Context().ConfigRoot)
+
+		log.Info("checking if daemon is running...")
+		if daemonLocked {
+			e := "ipfs daemon is running. please stop it to run this command"
+			return cmds.ClientError(e)
+		}
+
+		return nil
 	},
 	Run: func(req cmds.Request, res cmds.Response) {
 
@@ -65,14 +76,14 @@ var initCmd = &cmds.Command{
 	},
 }
 
-var errRepoExists = debugerror.New(`ipfs configuration file already exists!
+var errRepoExists = errors.New(`ipfs configuration file already exists!
 Reinitializing would overwrite your keys.
 (use -f to force overwrite)
 `)
 
 func initWithDefaults(out io.Writer, repoRoot string) error {
 	err := doInit(out, repoRoot, false, nBitsForKeypairDefault)
-	return debugerror.Wrap(err)
+	return err
 }
 
 func doInit(out io.Writer, repoRoot string, force bool, nBitsForKeypair int) error {
@@ -143,7 +154,7 @@ func addDefaultAssets(out io.Writer, repoRoot string) error {
 		return err
 	}
 
-	if err := nd.Pinning.Pin(dir, true); err != nil {
+	if err := nd.Pinning.Pin(ctx, dir, true); err != nil {
 		return err
 	}
 

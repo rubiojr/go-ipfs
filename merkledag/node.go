@@ -3,6 +3,8 @@ package merkledag
 import (
 	"fmt"
 
+	"github.com/ipfs/go-ipfs/Godeps/_workspace/src/golang.org/x/net/context"
+
 	mh "github.com/ipfs/go-ipfs/Godeps/_workspace/src/github.com/jbenet/go-multihash"
 	u "github.com/ipfs/go-ipfs/util"
 )
@@ -77,29 +79,32 @@ func MakeLink(n *Node) (*Link, error) {
 }
 
 // GetNode returns the MDAG Node that this link points to
-func (l *Link) GetNode(serv DAGService) (*Node, error) {
+func (l *Link) GetNode(ctx context.Context, serv DAGService) (*Node, error) {
 	if l.Node != nil {
 		return l.Node, nil
 	}
 
-	return serv.Get(u.Key(l.Hash))
+	return serv.Get(ctx, u.Key(l.Hash))
 }
 
 // AddNodeLink adds a link to another node.
 func (n *Node) AddNodeLink(name string, that *Node) error {
 	n.encoded = nil
+
 	lnk, err := MakeLink(that)
+
+	lnk.Name = name
+	lnk.Node = that
 	if err != nil {
 		return err
 	}
-	lnk.Name = name
-	lnk.Node = that
 
-	n.Links = append(n.Links, lnk)
+	n.AddRawLink(name, lnk)
+
 	return nil
 }
 
-// AddNodeLink adds a link to another node. without keeping a reference to
+// AddNodeLinkClean adds a link to another node. without keeping a reference to
 // the child node
 func (n *Node) AddNodeLinkClean(name string, that *Node) error {
 	n.encoded = nil
@@ -107,9 +112,21 @@ func (n *Node) AddNodeLinkClean(name string, that *Node) error {
 	if err != nil {
 		return err
 	}
-	lnk.Name = name
+	n.AddRawLink(name, lnk)
 
-	n.Links = append(n.Links, lnk)
+	return nil
+}
+
+// AddRawLink adds a copy of a link to this node
+func (n *Node) AddRawLink(name string, l *Link) error {
+	n.encoded = nil
+	n.Links = append(n.Links, &Link{
+		Name: name,
+		Size: l.Size,
+		Hash: l.Hash,
+		Node: l.Node,
+	})
+
 	return nil
 }
 
@@ -123,6 +140,21 @@ func (n *Node) RemoveNodeLink(name string) error {
 		}
 	}
 	return ErrNotFound
+}
+
+// Return a copy of the link with given name
+func (n *Node) GetNodeLink(name string) (*Link, error) {
+	for _, l := range n.Links {
+		if l.Name == name {
+			return &Link{
+				Name: l.Name,
+				Size: l.Size,
+				Hash: l.Hash,
+				Node: l.Node,
+			}, nil
+		}
+	}
+	return nil, ErrNotFound
 }
 
 // Copy returns a copy of the node.

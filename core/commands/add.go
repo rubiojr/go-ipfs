@@ -1,11 +1,13 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"path"
 	"strings"
+
+	"github.com/ipfs/go-ipfs/Godeps/_workspace/src/github.com/cheggaaa/pb"
+	context "github.com/ipfs/go-ipfs/Godeps/_workspace/src/golang.org/x/net/context"
 
 	cmds "github.com/ipfs/go-ipfs/commands"
 	files "github.com/ipfs/go-ipfs/commands/files"
@@ -14,12 +16,8 @@ import (
 	importer "github.com/ipfs/go-ipfs/importer"
 	"github.com/ipfs/go-ipfs/importer/chunk"
 	dag "github.com/ipfs/go-ipfs/merkledag"
-	pinning "github.com/ipfs/go-ipfs/pin"
 	ft "github.com/ipfs/go-ipfs/unixfs"
 	u "github.com/ipfs/go-ipfs/util"
-	"github.com/ipfs/go-ipfs/util/debugerror"
-
-	"github.com/ipfs/go-ipfs/Godeps/_workspace/src/github.com/cheggaaa/pb"
 )
 
 // Error indicating the max depth has been exceded.
@@ -101,13 +99,29 @@ remains to be implemented.
 
 			for {
 				file, err := req.Files().NextFile()
-				if (err != nil && err != io.EOF) || file == nil {
+				if err != nil && err != io.EOF {
+					res.SetError(err, cmds.ErrNormal)
+					return
+				}
+				if file == nil { // done
 					return
 				}
 
-				_, err = addFile(n, file, outChan, progress, wrap)
+				rootnd, err := addFile(n, file, outChan, progress, wrap)
 				if err != nil {
-					res.SetError(debugerror.Wrap(err), cmds.ErrNormal)
+					res.SetError(err, cmds.ErrNormal)
+					return
+				}
+
+				err = n.Pinning.Pin(context.Background(), rootnd, true)
+				if err != nil {
+					res.SetError(err, cmds.ErrNormal)
+					return
+				}
+
+				err = n.Pinning.Flush()
+				if err != nil {
+					res.SetError(err, cmds.ErrNormal)
 					return
 				}
 			}
@@ -200,15 +214,10 @@ remains to be implemented.
 }
 
 func add(n *core.IpfsNode, readers []io.Reader) ([]*dag.Node, error) {
-	mp, ok := n.Pinning.(pinning.ManualPinner)
-	if !ok {
-		return nil, errors.New("invalid pinner type! expected manual pinner")
-	}
-
 	dagnodes := make([]*dag.Node, 0)
 
 	for _, reader := range readers {
-		node, err := importer.BuildDagFromReader(reader, n.DAG, mp, chunk.DefaultSplitter)
+		node, err := importer.BuildDagFromReader(reader, n.DAG, nil, chunk.DefaultSplitter)
 		if err != nil {
 			return nil, err
 		}
@@ -221,20 +230,6 @@ func add(n *core.IpfsNode, readers []io.Reader) ([]*dag.Node, error) {
 	}
 
 	return dagnodes, nil
-}
-
-func addNode(n *core.IpfsNode, node *dag.Node) error {
-	err := n.DAG.AddRecursive(node) // add the file to the graph + local storage
-	if err != nil {
-		return err
-	}
-
-	err = n.Pinning.Pin(node, true) // ensure we keep it
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func addFile(n *core.IpfsNode, file files.File, out chan interface{}, progress bool, wrap bool) (*dag.Node, error) {
@@ -305,7 +300,7 @@ func addDir(n *core.IpfsNode, dir files.File, out chan interface{}, progress boo
 		return nil, err
 	}
 
-	err = addNode(n, tree)
+	_, err = n.DAG.Add(tree)
 	if err != nil {
 		return nil, err
 	}

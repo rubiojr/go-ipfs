@@ -9,16 +9,16 @@ test_description="Test init command"
 . lib/test-lib.sh
 
 test_expect_success "ipfs init succeeds" '
-	export IPFS_PATH="$(pwd)/.go-ipfs" &&
+	export IPFS_PATH="$(pwd)/.ipfs" &&
 	BITS="2048" &&
 	ipfs init --bits="$BITS" >actual_init
 '
 
-test_expect_success ".go-ipfs/ has been created" '
-	test -d ".go-ipfs" &&
-	test -f ".go-ipfs/config" &&
-	test -d ".go-ipfs/datastore" ||
-	test_fsh ls -al .go-ipfs
+test_expect_success ".ipfs/ has been created" '
+	test -d ".ipfs" &&
+	test -f ".ipfs/config" &&
+	test -d ".ipfs/datastore" ||
+	test_fsh ls -al .ipfs
 '
 
 test_expect_success "ipfs config succeeds" '
@@ -43,5 +43,17 @@ test_expect_success "ipfs init output looks good" '
 	printf "\\n\\t$STARTFILE\\n\\n" >>expected &&
 	test_cmp expected actual_init
 '
+
+test_init_ipfs
+
+test_launch_ipfs_daemon
+
+test_expect_success "ipfs init should not run while daemon is running" '
+	test_must_fail ipfs init 2> daemon_running_err &&
+	EXPECT="Error: ipfs daemon is running. please stop it to run this command" &&
+	grep "$EXPECT" daemon_running_err
+'
+
+test_kill_ipfs_daemon
 
 test_done

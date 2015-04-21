@@ -1,6 +1,6 @@
 # FUSE
 
-As a golang project, `go-ipfs` is easily downloaded and installed with `go get github.com/ipfs/go-ipfs`. All data is stored in a leveldb data store in `~/.go-ipfs/datastore`. If, however, you would like to mount the datastore (`ipfs mount /ipfs`) and use it as you would a normal filesystem, you will need to install fuse.
+As a golang project, `go-ipfs` is easily downloaded and installed with `go get github.com/ipfs/go-ipfs`. All data is stored in a leveldb data store in `~/.ipfs/datastore`. If, however, you would like to mount the datastore (`ipfs mount /ipfs`) and use it as you would a normal filesystem, you will need to install fuse.
 
 As a precursor, you will have to create the `/ipfs` and `/ipns` directories explicitly. Note that modifying root requires sudo permissions.
 
@@ -13,6 +13,8 @@ sudo mkdir /ipns
 sudo chown <username> /ipfs
 sudo chown <username> /ipns
 ```
+
+Depending on whether you are using OSX or Linux, follow the proceeding instructions.
 
 ## Mac OSX -- OSXFUSE
 
@@ -40,7 +42,32 @@ Then change permissions on the fuse config:
 sudo chown <username>:<groupname> /etc/fuse.conf
 ```
 
-(note `<groupname>` should probably be `fuse`)
+You may also have to change `/dev/fuse`:
+
+```sh
+sudo chown <username>:<groupname> /dev/fuse
+```
+
+Note: `<groupname>` will usually be `fuse`. Typically, you add the authorized users to the `fuse` group:
+
+```sh
+usermod -a -G fuse <username>
+```
+
+## Mounting IPFS
+
+Once FUSE and the mountpoints have been created, issue the following command:
+
+```sh
+ipfs daemon --mount
+```
+
+If you wish to allow other users to use the mount points, use the following:
+
+```sh
+ipfs config Mounts.AllowOther --bool true
+ipfs daemon --mount
+```
 
 ## Troubleshooting
 
