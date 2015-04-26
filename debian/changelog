@@ -1,3 +1,9 @@
+ipfs (0.3.2+git20150427+fcb559e-0rbel1) trusty; urgency=medium
+
+  * ipfs 0.3.2 git fcb559e
+
+ -- Sergio Rubio <rubiojr@frameos.org>  Mon, 27 Apr 2015 01:17:02 +0200
+
 ipfs (0.3.1-0rbel1) trusty; urgency=medium
 
   * ipfs 0.3.1
